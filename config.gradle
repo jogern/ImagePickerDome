@@ -1,0 +1,29 @@
+
+
+static def releaseTime() {
+    return new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
+}
+
+ext {
+
+    curData = "${releaseTime()}"
+
+    android = [
+            applicationId    : "com.jogern.jui",
+            buildToolsVersion: "28.0.3",
+            minSdkVersion    : 15,
+            targetSdkVersion : 28,
+            compileSdkVersion: 28,
+
+            versionName      : "${releaseTime()}",
+    ]
+
+    appcompat_lib = 'androidx.appcompat:appcompat:1.0.2'
+    recyclerview_lib = 'androidx.recyclerview:recyclerview:1.0.0'
+    //multidex_lib = 'com.android.support:multidex:1.0.3'
+    multidex_lib = 'androidx.multidex:multidex:2.0.1'
+    //util_lib = 'com.github.jogern:JAndroidUtil:v1.0.0'
+
+    versionCode = 1
+
+}
