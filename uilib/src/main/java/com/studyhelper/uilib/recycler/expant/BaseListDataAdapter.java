@@ -13,8 +13,20 @@ public abstract class BaseListDataAdapter<T> extends BaseRecyclerItemAdapter {
 
       protected List<T> mDataList;
 
+      /**
+       * 设置数据
+       * @param listItems 列表
+       */
       protected void setListItems(List<T> listItems) {
             mDataList = listItems;
+      }
+
+      /**
+       * 获取数据列表
+       * @return 数据列表
+       */
+      public List<T> getDataList() {
+            return mDataList;
       }
 
       @Override

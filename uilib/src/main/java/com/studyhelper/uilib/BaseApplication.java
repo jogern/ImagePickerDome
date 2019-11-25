@@ -9,10 +9,14 @@ import android.app.Application;
  */
 public abstract class BaseApplication extends Application {
 
+    protected SaveCrashHandler crashHandler = new SaveCrashHandler();
 
-    protected void setSaveCrash() {
-        SaveCrashHandler crashHandler = new SaveCrashHandler();
-        crashHandler.init(this);
+    /**
+     * 设置保存异常
+     * @param isFilterSysDeal 是否交回系统处理
+     */
+    protected void setSaveCrash(boolean isFilterSysDeal) {
+        crashHandler.setFilterSysDeal(isFilterSysDeal).init(this);
     }
 
 }
