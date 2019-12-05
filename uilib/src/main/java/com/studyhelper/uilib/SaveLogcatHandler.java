@@ -42,10 +42,10 @@ public class SaveLogcatHandler {
 
     private String mPath;
     private String mAppName;
-    private long mFileLimit = 50L;
+    private long mFileLimit = 20L;
+    private SaveRun mSaveRun;
     private ExecutorService mCache = Executors.newCachedThreadPool();
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
-        SaveRun mSaveRun;
 
         @Override
         public void handleMessage(Message msg) {
@@ -66,7 +66,7 @@ public class SaveLogcatHandler {
         }
     };
 
-    protected SaveLogcatHandler() {
+    SaveLogcatHandler() {
     }
 
     public SaveLogcatHandler init(Context context) {
@@ -81,7 +81,7 @@ public class SaveLogcatHandler {
     /**
      * 设置保存文件的大小
      *
-     * @param limitLen 10至100的范围,默认50
+     * @param limitLen 10至100的范围,默认20
      * @return
      */
     public SaveLogcatHandler setFileLimit(int limitLen) {
@@ -103,6 +103,10 @@ public class SaveLogcatHandler {
         mHandler.obtainMessage(M_END).sendToTarget();
     }
 
+    public boolean isRunning() {
+        return mSaveRun != null && mSaveRun.isRunning;
+    }
+
     private class SaveRun implements Runnable {
 
         boolean isRunning;
@@ -111,7 +115,7 @@ public class SaveLogcatHandler {
         public void run() {
             isRunning = true;
             //日志等级：*:v , *:d , *:i , *:w , *:e , *:f , *:s
-            String cmds = "logcat *:v, *:d, *:i, *:w, *:e, *:f, *:s | grep \"(" + android.os.Process.myPid() + ")\"";
+            String cmds = "logcat *:f *:s *:e *:w *:i *:d *:v | grep \"(" + android.os.Process.myPid() + ")\"";
             Process process = null;
             while (isRunning) {
                 if (process == null) {

@@ -35,6 +35,8 @@ public class JUiApplication extends BaseApplication {
         if (isPrintfLog(BuildConfig.DEBUG)) {
             receiverDebugLog(true);
         }
+
+        setSaveLogcat(100);
     }
 
 
