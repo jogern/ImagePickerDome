@@ -42,7 +42,7 @@ public class SaveLogcatHandler {
 
     private String mPath;
     private String mAppName;
-    private long mFileLimit = 20L;
+    private long mFileLimit = 5L;
     private SaveRun mSaveRun;
     private ExecutorService mCache = Executors.newCachedThreadPool();
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
@@ -74,19 +74,23 @@ public class SaveLogcatHandler {
         if (pkgInfo != null && pkgInfo.size() > 0) {
             mAppName = pkgInfo.get(SaveHandlerUtil.KEY_APK_NAME);
         }
-        mPath = SaveHandlerUtil.getCacheDir(context);
+        if (mAppName == null || mAppName.length() <= 0) {
+            mPath = SaveHandlerUtil.getCacheDir(context);
+        } else {
+            mPath = SaveHandlerUtil.getSaveDir(context);
+        }
         return this;
     }
 
     /**
      * 设置保存文件的大小
      *
-     * @param limitLen 10至100的范围,默认20
+     * @param limitLen 10至100的范围,默认5
      * @return
      */
     public SaveLogcatHandler setFileLimit(int limitLen) {
-        if (limitLen <= 10) {
-            mFileLimit = 10;
+        if (limitLen <= 2) {
+            mFileLimit = 2;
         } else if (limitLen > 100) {
             mFileLimit = 100;
         } else {
@@ -105,6 +109,13 @@ public class SaveLogcatHandler {
 
     public boolean isRunning() {
         return mSaveRun != null && mSaveRun.isRunning;
+    }
+
+    private String startName() {
+        if (mAppName == null || mAppName.length() <= 0) {
+            return "Logcat";
+        }
+        return "Logcat" + mAppName;
     }
 
     private class SaveRun implements Runnable {
@@ -149,7 +160,8 @@ public class SaveLogcatHandler {
                 }
                 try {
                     if (out == null) {
-                        file = new File(mPath, "Logcat-" + System.currentTimeMillis() + ".log");
+                        String name = startName() + "-" + System.currentTimeMillis() + ".log";
+                        file = new File(mPath, name);
                         out = new FileOutputStream(file);
                         deleteFile(file.getParentFile());
                     }
@@ -185,12 +197,14 @@ public class SaveLogcatHandler {
         private void deleteFile(File file) {
             File[] files = file.listFiles();
             if (files != null) {
+                String startName = startName();
+
                 List<File> fileList = new ArrayList<>();
                 for (File f : files) {
                     if (f.isDirectory()) {
                         continue;
                     }
-                    if (f.getName().startsWith("Logcat")) {
+                    if (f.getName().startsWith(startName)) {
                         fileList.add(f);
                     }
                 }

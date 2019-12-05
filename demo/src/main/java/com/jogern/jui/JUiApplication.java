@@ -36,7 +36,7 @@ public class JUiApplication extends BaseApplication {
             receiverDebugLog(true);
         }
 
-        setSaveLogcat(100);
+        setSaveLogcat(10);
     }
 
 
