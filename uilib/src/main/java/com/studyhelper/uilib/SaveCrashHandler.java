@@ -29,8 +29,6 @@ import java.util.Map;
  */
 public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
 
-    private final String KEY_APK_NAME = "apkName";
-
     /**
      * 系统默认的UncaughtException处理类
      **/
@@ -74,7 +72,7 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
         // 1、上下文
         mContext = context;
         //得到保存 Crash 的路径
-        mCrashFilePath = getSaveDir();
+        mCrashFilePath = SaveHandlerUtil.getSaveDir(context);
         System.out.println("CrashFilePath: " + mCrashFilePath);
         // 2、获取系统默认的UncaughtException处理器
         mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();
@@ -129,21 +127,12 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
      * @param ctx 上下文
      */
     private void collectDeviceInfo(Context ctx) {
-        try {
-            PackageManager pm = ctx.getPackageManager();
-            PackageInfo pi = pm.getPackageInfo(ctx.getPackageName(), PackageManager.GET_ACTIVITIES);
-            if (pi != null) {
-                String versionName = pi.versionName;
-
-                mDeviceInfo.put("应用版本", versionName == null ? "null" : versionName);
-                mDeviceInfo.put("应用版本号", String.valueOf(pi.versionCode));
-                mDeviceInfo.put("品牌", Build.MANUFACTURER);
-                mDeviceInfo.put("机型", Build.MODEL);
-                mDeviceInfo.put("Android 版本", Build.VERSION.RELEASE);
-                mDeviceInfo.put("系统版本", Build.DISPLAY);
-                mDeviceInfo.put(KEY_APK_NAME, pi.applicationInfo.loadLabel(pm).toString());
-            }
-        } catch (PackageManager.NameNotFoundException ignored) {
+        if (mDeviceInfo.size() > 0) {
+            return;
+        }
+        Map<String, String> pkgInfo = SaveHandlerUtil.getPkgInfo(ctx);
+        if (pkgInfo != null && pkgInfo.size() > 0) {
+            mDeviceInfo.putAll(pkgInfo);
         }
     }
 
@@ -211,33 +200,9 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    /**
-     * Crash 得到保存的路径
-     *
-     * @return 路径, 可能为 null
-     */
-    private String getSaveDir() {
-        String path = "";
-        File externalFile = Environment.getExternalStorageDirectory();
-        if (externalFile != null) {
-            File file = new File(externalFile, "CrashLog");
-            if (!file.exists() && !file.mkdirs()) {
-                System.out.println("sout: mkdirs CrashLog dir fail");
-            } else {
-                path = file.getAbsolutePath();
-            }
-        }
-        if (path == null || path.length() <= 0) {
-            File cacheDir = mContext.getExternalCacheDir();
-            if (cacheDir != null) {
-                path = cacheDir.getPath();
-            }
-        }
-        return path;
-    }
 
     private String getApkName() {
-        String apkName = mDeviceInfo.get(KEY_APK_NAME);
+        String apkName = mDeviceInfo.get(SaveHandlerUtil.KEY_APK_NAME);
         if (apkName == null || apkName.length() <= 0) {
             Application context = mContext;
             if (context != null) {
