@@ -28,6 +28,8 @@ import java.util.concurrent.Executors;
  */
 public class SaveLogcatHandler {
 
+    //日志等级：*:v , *:d , *:i , *:w , *:e , *:f , *:s
+    private static final String CMD = "logcat *:f *:s *:e *:w *:i *:d *:v | grep ";
     private static final int M_START = 0x10;
     private static final int M_END = 0x11;
 
@@ -44,7 +46,7 @@ public class SaveLogcatHandler {
     private String mAppName;
     private long mFileLimit = 5L;
     private SaveRun mSaveRun;
-    private ExecutorService mCache = Executors.newCachedThreadPool();
+    private ExecutorService mCache = Executors.newSingleThreadExecutor();
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
 
         @Override
@@ -118,47 +120,66 @@ public class SaveLogcatHandler {
         return "Logcat" + mAppName;
     }
 
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        if (!mCache.isShutdown()) {
+            mCache.shutdown();
+        }
+    }
+
     private class SaveRun implements Runnable {
 
-        boolean isRunning;
+        volatile boolean isRunning;
 
         @Override
         public void run() {
             isRunning = true;
-            //日志等级：*:v , *:d , *:i , *:w , *:e , *:f , *:s
-            String cmds = "logcat *:f *:s *:e *:w *:i *:d *:v | grep \"(" + android.os.Process.myPid() + ")\"";
+
             Process process = null;
             while (isRunning) {
-                if (process == null) {
-                    try {
-                        process = Runtime.getRuntime().exec(cmds);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        process = null;
-                    }
+                try {
+                    String cmds = "\"(" + android.os.Process.myPid() + ")\"";
+                    process = Runtime.getRuntime().exec(CMD + cmds);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    process = null;
                 }
                 if (process == null) {
                     SystemClock.sleep(500);
                     continue;
                 }
-                ExecSave(process);
+                BufferedReader reader = null;
+                try {
+                    reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    ExecSave(reader);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (reader != null) {
+                        try {
+                            reader.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    process.destroy();
+                }
             }
-            if (process != null) {
-                process.destroy();
-            }
+
             isRunning = false;
         }
 
-        private void ExecSave(Process process) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        private void ExecSave(BufferedReader reader) {
             File file = null;
             FileOutputStream out = null;
-            while (isRunning) {
-                if (TextUtils.isEmpty(mPath)) {
-                    SystemClock.sleep(5000);
-                    continue;
-                }
+            while (true) {
                 try {
+                    if (TextUtils.isEmpty(mPath)) {
+                        SystemClock.sleep(5000);
+                        continue;
+                    }
                     if (out == null) {
                         String name = startName() + "-" + System.currentTimeMillis() + ".log";
                         file = new File(mPath, name);
@@ -171,27 +192,35 @@ public class SaveLogcatHandler {
                         out.flush();
                     }
 
-                    long length = file.length();
+                    long length = file == null ? 0 : file.length();
                     if (length > mFileLimit * 1024 * 1024) {
                         out.close();
                         out = null;
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    if (out != null) {
+                        try {
+                            out.close();
+                        } catch (IOException eOut) {
+                            eOut.printStackTrace();
+                        }
+                    }
+                    break;
                 }
-            }
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (isRunning) {
+                    continue;
                 }
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
             }
-            try {
-                reader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
         }
 
         private void deleteFile(File file) {
