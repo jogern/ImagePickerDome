@@ -176,7 +176,7 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
      * @param crashText 保存的异常文本
      */
     private void saveToCrashFile(String md5, String crashText) {
-        String fileName = getApkName() + "-" + md5 + ".log";
+        String fileName = "Crash" + getApkName() + "-" + md5 + ".log";
         //生成的crash文件
         File crashFile = new File(mCrashFilePath, fileName);
         System.out.println("save crash path: " + crashFile.getAbsolutePath());
