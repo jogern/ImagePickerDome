@@ -6,6 +6,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Create on 2019-08-13.
  *
@@ -13,18 +15,21 @@ import androidx.fragment.app.FragmentTransaction;
  */
 public abstract class BaseFragActivity extends BaseActivity {
 
-    private int      mFragmentContainerId;
-    private Fragment mContainerFragment;
+    private int mFragmentContainerId;
+    private WeakReference<Fragment> mContainerFragment;
 
     /**
      * 设置 Fragment 容器的 ResId
+     *
      * @param fragmentContainerId
      */
     protected void setFragmentContainerId(int fragmentContainerId) {
         mFragmentContainerId = fragmentContainerId;
     }
 
-    /** 增加Fragment到栈中 */
+    /**
+     * 增加Fragment到栈中
+     */
     public void addFragmentInStack(Fragment fragment) {
         if (fragment != null) {
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
@@ -52,13 +57,15 @@ public abstract class BaseFragActivity extends BaseActivity {
         }
     }
 
-    /** 增加Fragment到容器中 */
+    /**
+     * 增加Fragment到容器中
+     */
     public void addFragmentInContainer(Fragment fragment) {
         if (fragment != null) {
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             // ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);*/
             String tag = fragment.getClass().getName();
-            mContainerFragment = fragment;
+            mContainerFragment = new WeakReference<>(fragment);
             ft.replace(mFragmentContainerId, fragment, tag).commitAllowingStateLoss();
         }
     }
@@ -75,12 +82,14 @@ public abstract class BaseFragActivity extends BaseActivity {
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.setCustomAnimations(enter, exit, popEnter, popExit);
             String tag = fragment.getClass().getName();
-            mContainerFragment = fragment;
+            mContainerFragment = new WeakReference<>(fragment);
             ft.replace(mFragmentContainerId, fragment, tag).commitAllowingStateLoss();
         }
     }
 
-    /** 移除栈顶的Fragment */
+    /**
+     * 移除栈顶的Fragment
+     */
     public void removePopFragmentOfStack() {
         FragmentManager fragmentManager = getSupportFragmentManager();
         int entryCount = fragmentManager.getBackStackEntryCount();
@@ -89,7 +98,9 @@ public abstract class BaseFragActivity extends BaseActivity {
         }
     }
 
-    /** 获取栈顶的Fragment */
+    /**
+     * 获取栈顶的Fragment
+     */
     public Fragment getPopFragmentOfStack() {
         FragmentManager manager = getSupportFragmentManager();
         int count = manager.getBackStackEntryCount();
@@ -109,6 +120,7 @@ public abstract class BaseFragActivity extends BaseActivity {
 
     /**
      * 获取 Fragment 栈中的 Fragment 的数量
+     *
      * @return
      */
     protected int getBackStackEntryCount() {
@@ -117,15 +129,28 @@ public abstract class BaseFragActivity extends BaseActivity {
     }
 
     /**
+     * 移除已经增加的 Fragment
+     * @param fragment
+     */
+    public void removeAddedFragment(Fragment fragment) {
+        if (fragment != null && fragment.isAdded()) {
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.remove(fragment).commitAllowingStateLoss();
+        }
+    }
+
+    /**
      * 获取增加到容器中(没有加入栈)的Fragment
+     *
      * @return
      */
     @Nullable
     public Fragment getContainerFragment() {
-        return mContainerFragment;
+        if (mContainerFragment != null)
+            return mContainerFragment.get();
+
+        return null;
     }
-
-
 
 
 //      @Override
