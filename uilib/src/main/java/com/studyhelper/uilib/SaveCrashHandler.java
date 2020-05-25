@@ -85,7 +85,11 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
     public void uncaughtException(Thread thread, Throwable ex) {
         boolean isDeal = false;
         if (!TextUtils.isEmpty(mCrashFilePath) || mContext != null) {
-            isDeal = handlerException(ex);
+            try {
+                isDeal = handlerException(ex);
+            }catch (Exception e){
+                System.out.println("Exception save e："+e.toString());
+            }
         }
 
         //如果有处理了，就直接结束 apk
@@ -193,6 +197,9 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
         String fileName = "Crash" + getApkName() + "-" + md5 + ".log";
         //生成的crash文件
         File crashFile = new File(mCrashFilePath, fileName);
+        if (crashFile.exists()) {
+            return;
+        }
         System.out.println("save crash path: " + crashFile.getAbsolutePath());
         OutputStream out = null;
         try {
