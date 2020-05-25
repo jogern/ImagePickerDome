@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Process;
 import android.text.TextUtils;
 
 import java.io.File;
@@ -42,7 +43,7 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
     /**
      * 程序context
      **/
-    private Application mContext;
+    private BaseApplication mContext;
     /**
      * 异常是否交回给系统处理,默认是给系统处理
      */
@@ -68,7 +69,7 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
      *
      * @param context apk Application
      */
-    public void init(Application context) {
+    public void init(BaseApplication context) {
         // 1、上下文
         mContext = context;
         //得到保存 Crash 的路径
@@ -89,6 +90,12 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
 
         //如果有处理了，就直接结束 apk
         if (isDeal && !mIsFilterSysDeal) {
+            ActivityCollector collector = mContext.getActivityCollector();
+            if (collector != null) {
+                collector.finishAllActivity();
+            }
+
+            Process.killProcess(Process.myPid());
             System.exit(0);
         } else {
             if (mDefaultHandler != null) {

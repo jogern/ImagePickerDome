@@ -17,6 +17,7 @@ public abstract class BaseApplication extends Application {
 
     private SaveCrashHandler crashHandler = new SaveCrashHandler();
     private SaveLogcatHandler mLogcatHandler = new SaveLogcatHandler();
+    private ActivityCollector mActivityCollector=new ActivityCollector();
 
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
@@ -88,6 +89,16 @@ public abstract class BaseApplication extends Application {
      */
     protected void setSaveLogcat(int limitLen) {
         mLogcatHandler.setFileLimit(limitLen).init(this).startSave();
+    }
+
+    public ActivityCollector getActivityCollector() {
+        return mActivityCollector;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        registerActivityLifecycleCallbacks(mActivityCollector);
     }
 
     protected boolean isPrintfLog(boolean isDebug) {
