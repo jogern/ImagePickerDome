@@ -33,6 +33,7 @@ public class ActivityCollector implements Application.ActivityLifecycleCallbacks
         for (Activity activity : allList) {
             if (!activity.isFinishing()) {
                 activity.finish();
+                System.out.println("finish activity："+activity.getClass().getName());
             }
         }
     }

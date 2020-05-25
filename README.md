@@ -4,5 +4,5 @@
 * 在 studio 中引用
 
 ~~~
-implementation 'com.github.jogern:JAndroidUI:v1.0.8'
+implementation 'com.github.jogern:JAndroidUI:v1.0.9'
 ~~~

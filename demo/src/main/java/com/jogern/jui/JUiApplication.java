@@ -24,19 +24,21 @@ public class JUiApplication extends BaseApplication {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         MultiDex.install(this);
+
+        //初始化保存 logcat
+        getLogcatHandler().init(this);
+        //注册广播开启 logcat 打印
+        debugLogRegister();
+        setSaveCrash(false);
     }
 
 
     @Override
     public void onCreate() {
         super.onCreate();
-        debugLogRegister();
 
-        if (isPrintfLog(BuildConfig.DEBUG)) {
-            receiverDebugLog(true);
-        }
+        receiverDebugLog(true);
 
-        setSaveLogcat(10);
     }
 
 

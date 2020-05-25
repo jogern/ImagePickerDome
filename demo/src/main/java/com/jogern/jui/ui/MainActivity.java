@@ -11,7 +11,7 @@ import com.studyhelper.uilib.ui.BaseActivity;
  * @author jogern
  */
 public class MainActivity extends BaseActivity {
-
+String test;
 
       @Override
       protected void onCreate(Bundle savedInstanceState) {
@@ -21,5 +21,6 @@ public class MainActivity extends BaseActivity {
 
 
       public void onClickTest(View view) {
+            test.equals("");
       }
 }

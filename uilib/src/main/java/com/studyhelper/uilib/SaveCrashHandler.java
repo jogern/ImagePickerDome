@@ -93,10 +93,17 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
             ActivityCollector collector = mContext.getActivityCollector();
             if (collector != null) {
                 collector.finishAllActivity();
+                System.out.println("Exception finish all activity ...");
             }
 
-            Process.killProcess(Process.myPid());
-            System.exit(0);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println("Exception exec exit ...");
+                    Process.killProcess(Process.myPid());
+                    System.exit(0);
+                }
+            }).start();
         } else {
             if (mDefaultHandler != null) {
                 //把异常给回系统处理
