@@ -87,8 +87,8 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
         if (!TextUtils.isEmpty(mCrashFilePath) || mContext != null) {
             try {
                 isDeal = handlerException(ex);
-            }catch (Exception e){
-                System.out.println("Exception save e："+e.toString());
+            } catch (Exception e) {
+                System.out.println("Exception save e：" + e.toString());
             }
         }
 
@@ -159,33 +159,38 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
      *
      * @param ex 异常对象
      */
-    private void saveLogAndCrash(Throwable ex) {
-        StringBuilder sb = new StringBuilder("DeviceInfo: \n ");
-        // 遍历infos
-        for (Map.Entry<String, String> entry : mDeviceInfo.entrySet()) {
-            String key = entry.getKey().toLowerCase(Locale.getDefault());
-            String value = entry.getValue();
-            if (!TextUtils.isEmpty(key)) {
-                sb.append(key).append(": ").append(value).append("\n");
+    private boolean saveLogAndCrash(Throwable ex) {
+        try {
+            StringBuilder sb = new StringBuilder("DeviceInfo: \n ");
+            // 遍历infos
+            for (Map.Entry<String, String> entry : mDeviceInfo.entrySet()) {
+                String key = entry.getKey().toLowerCase(Locale.getDefault());
+                String value = entry.getValue();
+                if (!TextUtils.isEmpty(key)) {
+                    sb.append(key).append(": ").append(value).append("\n");
+                }
             }
+            sb.append("createTime: ").append(mDateFormat.format(new Date())).append("\n");
+            // 将错误手机到writer中
+            Writer writer = new StringWriter();
+            PrintWriter pw = new PrintWriter(writer);
+            ex.printStackTrace(pw);
+            Throwable cause = ex.getCause();
+            while (cause != null) {
+                pw.write("\n");
+                cause.printStackTrace(pw);
+                cause = cause.getCause();
+            }
+            pw.close();
+            String result = writer.toString();
+            sb.append("\nExcetpion: \n ");
+            sb.append(result);
+            // 5.3.1 记录异常到特定文件中
+           return saveToCrashFile(md5(result), sb.toString());
+        } catch (Exception e) {
+            System.out.println("Exception find msg e：" + e.toString());
         }
-        sb.append("createTime: ").append(mDateFormat.format(new Date())).append("\n");
-        // 将错误手机到writer中
-        Writer writer = new StringWriter();
-        PrintWriter pw = new PrintWriter(writer);
-        ex.printStackTrace(pw);
-        Throwable cause = ex.getCause();
-        while (cause != null) {
-            pw.write("\n");
-            cause.printStackTrace(pw);
-            cause = cause.getCause();
-        }
-        pw.close();
-        String result = writer.toString();
-        sb.append("\nExcetpion: \n ");
-        sb.append(result);
-        // 5.3.1 记录异常到特定文件中
-        saveToCrashFile(md5(result), sb.toString());
+        return false;
     }
 
     /**
@@ -193,12 +198,12 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
      *
      * @param crashText 保存的异常文本
      */
-    private void saveToCrashFile(String md5, String crashText) {
+    private boolean saveToCrashFile(String md5, String crashText) {
         String fileName = "Crash" + getApkName() + "-" + md5 + ".log";
         //生成的crash文件
         File crashFile = new File(mCrashFilePath, fileName);
         if (crashFile.exists()) {
-            return;
+            return true;
         }
         System.out.println("save crash path: " + crashFile.getAbsolutePath());
         OutputStream out = null;
@@ -207,9 +212,11 @@ public class SaveCrashHandler implements Thread.UncaughtExceptionHandler {
             out.write(crashText.getBytes());
             out.flush();
             System.out.println("Exception save ok .....");
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Exception save fail ......");
+            return false;
         } finally {
             if (out != null) {
                 try {
